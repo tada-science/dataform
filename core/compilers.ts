@@ -3,11 +3,10 @@ import { OperationContext } from "@dataform/core/operation";
 import { TableContext } from "@dataform/core/table";
 import * as utils from "@dataform/core/utils";
 import { ISqlxParseResults, parseSqlx } from "@dataform/sqlx/lexer";
-import { sep } from "path";
 
 export function compile(code: string, path: string) {
   if (path.endsWith(".sqlx")) {
-    if (path.split(sep).includes("includes")) {
+    if (path.includes("includes/")) {
       return compileIncludesSqlx(parseSqlx(code));
     } else {
       return compileSqlx(parseSqlx(code), path);
