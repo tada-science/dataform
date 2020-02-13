@@ -8,9 +8,14 @@ ts_library(
         ["*.ts"],
         exclude = ["*.spec.ts"],
     ),
+    module_name = "@dataform/testing",
     deps = [
         "@npm//@types/node",
         "@npm//chalk",
+        "@npm//@types/diff",
+        "@npm//diff",
+        "@npm//@types/json-stable-stringify",
+        "@npm//json-stable-stringify",
     ],
 )
 
@@ -21,7 +26,11 @@ ts_test_suite(
     srcs = glob(["*.spec.ts"]),
     deps = [
         ":testing",
+        "@npm//@types/diff",
         "@npm//@types/chai",
+        "@npm//@types/json-stable-stringify",
+        "@npm//json-stable-stringify",
+        "@npm//diff",
         "@npm//chai",
     ],
 )

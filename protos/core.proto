@@ -86,6 +86,7 @@ message Target {
 
 message BigQueryOptions {
   string partition_by = 1;
+  repeated string cluster_by = 2;
 }
 
 message RedshiftOptions {
@@ -114,6 +115,25 @@ message CompilationError {
   string file_name = 1;
   string message = 2;
   string stack = 3;
+}
+
+message QueryEvaluationError {
+  string message = 1;
+  message ErrorLocation {
+    int32 line = 1;
+    int32 column = 2;
+  }
+  // will not be set if error_location can't be determined
+  ErrorLocation error_location = 2;
+}
+
+message QueryEvaluationResponse {
+  enum QueryEvaluationStatus {
+    SUCCESS = 0;
+    FAILURE = 1;
+  }
+  QueryEvaluationStatus status = 1;
+  QueryEvaluationError error = 2;
 }
 
 message ActionDescriptor {
@@ -145,12 +165,14 @@ message Table {
   repeated string tags = 23;
 
   // Incremental only.
-  string where = 8;
+  string where = 8 [deprecated = true];
   string incremental_query = 26;
 
   // Pre/post operations.
   repeated string pre_ops = 13;
   repeated string post_ops = 14;
+  repeated string incremental_pre_ops = 28;
+  repeated string incremental_post_ops = 29;
 
   // Warehouse specific features.
   RedshiftOptions redshift = 21;

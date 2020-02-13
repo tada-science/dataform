@@ -4,8 +4,8 @@ import { Task, Tasks } from "@dataform/core/tasks";
 import { dataform } from "@dataform/protos";
 
 export class BigQueryAdapter extends Adapter implements IAdapter {
-  constructor(private project: dataform.IProjectConfig, private dataformCoreVersion: string) {
-    super();
+  constructor(private readonly project: dataform.IProjectConfig, dataformCoreVersion: string) {
+    super(dataformCoreVersion);
   }
 
   public resolveTarget(target: dataform.ITarget) {
@@ -19,14 +19,17 @@ export class BigQueryAdapter extends Adapter implements IAdapter {
     tableMetadata: dataform.ITableMetadata
   ): Tasks {
     const tasks = Tasks.create();
-    // Drop views/tables first if they exist.
-    if (tableMetadata && tableMetadata.type != this.baseTableType(table.type)) {
+
+    this.preOps(table, runConfig, tableMetadata).forEach(statement => tasks.add(statement));
+
+    if (tableMetadata && tableMetadata.type !== this.baseTableType(table.type)) {
       tasks.add(
         Task.statement(this.dropIfExists(table.target, this.oppositeTableType(table.type)))
       );
     }
-    if (table.type == "incremental") {
-      if (runConfig.fullRefresh || !tableMetadata || tableMetadata.type == "view") {
+
+    if (table.type === "incremental") {
+      if (!this.shouldWriteIncrementally(runConfig, tableMetadata)) {
         tasks.add(Task.statement(this.createOrReplace(table)));
       } else {
         tasks.add(
@@ -42,6 +45,9 @@ export class BigQueryAdapter extends Adapter implements IAdapter {
     } else {
       tasks.add(Task.statement(this.createOrReplace(table)));
     }
+
+    this.postOps(table, runConfig, tableMetadata).forEach(statement => tasks.add(statement));
+
     return tasks;
   }
 
@@ -61,24 +67,18 @@ export class BigQueryAdapter extends Adapter implements IAdapter {
     return tasks;
   }
 
-  public createEmptyIfNotExists(table: dataform.ITable) {
-    return `create ${this.baseTableType(table.type)} if not exists ${this.resolveTarget(
-      table.target
-    )} ${
-      table.bigquery && table.bigquery.partitionBy
-        ? `partition by ${table.bigquery.partitionBy}`
-        : ""
-    } as ${this.where(table.query, "false")}`;
-  }
-
   public createOrReplace(table: dataform.ITable) {
     return `create or replace ${this.baseTableType(table.type)} ${this.resolveTarget(
       table.target
     )} ${
       table.bigquery && table.bigquery.partitionBy
-        ? `partition by ${table.bigquery.partitionBy}`
+        ? `partition by ${table.bigquery.partitionBy} `
         : ""
-    } as ${table.query}`;
+    }${
+      table.bigquery && table.bigquery.clusterBy && table.bigquery.clusterBy.length > 0
+        ? `cluster by ${table.bigquery.clusterBy.join(", ")} `
+        : ""
+    }as ${table.query}`;
   }
 
   public createOrReplaceView(target: dataform.ITarget, query: string) {

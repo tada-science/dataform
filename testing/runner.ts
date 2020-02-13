@@ -1,5 +1,7 @@
+import { Hook, Suite } from "@dataform/testing";
 import chalk from "chalk";
-import { Suite } from "df/testing";
+import * as Diff from "diff";
+import * as DeterministicStringify from "json-stable-stringify";
 import { promisify } from "util";
 
 export interface IRunResult {
@@ -9,8 +11,11 @@ export interface IRunResult {
 }
 
 export interface IRunContext {
+  testNameMatcher: RegExp;
   path: string[];
   results: IRunResult[];
+  beforeEaches: Hook[];
+  afterEaches: Hook[];
 }
 
 export class Runner {
@@ -32,84 +37,116 @@ export class Runner {
 
   // tslint:disable: no-console
   public static async run() {
-    // We tell the runner to start running at the end of current block of
-    // synchronously executed code. This will typically be after all the
-    // suite definitions are evaluated. This is equivelant to setTimeout(..., 0).
-    await promisify(process.nextTick)();
-    const ctx: IRunContext = {
-      path: [],
-      results: []
-    };
-
-    await Promise.all([...this.topLevelSuites].map(suite => suite.run(ctx)));
-
-    if (ctx.results.length === 0) {
-      ctx.results.push({
+    try {
+      // We tell the runner to start running at the end of current block of
+      // synchronously executed code. This will typically be after all the
+      // suite definitions are evaluated. This is equivalent to setTimeout(..., 0).
+      await promisify(process.nextTick)();
+      const ctx: IRunContext = {
+        testNameMatcher: new RegExp(process.env.TESTBRIDGE_TEST_ONLY) || /.*/,
         path: [],
-        err: new Error("No tests found in top level test suite."),
-        outcome: "failed"
-      });
-    }
-    const indent = (value: string, levels = 4) =>
-      value
-        .split("\n")
-        .map(line => `${" ".repeat(4)}${line}`)
-        .join("\n");
+        results: [],
+        beforeEaches: [],
+        afterEaches: []
+      };
 
-    for (const result of ctx.results) {
-      const outcomeString = (result.outcome || "unknown").toUpperCase();
-      const pathString = result.path.join(" > ");
+      await Promise.all([...this.topLevelSuites].map(suite => suite.run(ctx)));
 
-      const colorFn =
-        result.outcome === "failed" || result.outcome === "timeout"
-          ? chalk.red
-          : result.outcome === "passed"
-          ? chalk.green
-          : chalk.yellow;
-      if (pathString.length + outcomeString.length + 1 <= 80) {
-        console.info(
-          `${pathString}${new Array(80 - pathString.length - outcomeString.length - 1)
-            .fill(" ")
-            .join("")}${colorFn(outcomeString)}`
-        );
-      } else {
-        console.info(pathString);
-        console.info(
-          `${new Array(80 - outcomeString.length - 1).fill(" ").join("")}${colorFn(outcomeString)}`
-        );
-      }
+      const indent = (value: string, levels = 4) =>
+        value
+          .split("\n")
+          .map(line => `${" ".repeat(4)}${line}`)
+          .join("\n");
 
-      if (result.err) {
-        const errString = result.err.stack
-          ? result.err.stack && indent(result.err.stack as string)
-          : `    ${JSON.stringify(result.err, null, 4)}`;
+      for (const result of ctx.results) {
+        const outcomeString = (result.outcome || "unknown").toUpperCase();
+        const pathString = result.path.join(" > ");
 
-        console.error(`\n${errString}\n`);
-        if (result.err.showDiff) {
-          console.error(`    Expected:\n`);
-          console.error(indent(JSON.stringify(result.err.expected, null, 4), 8));
-          console.error(`\n    Actual:\n`);
-          console.error(indent(JSON.stringify(result.err.actual, null, 4), 8));
-          console.error("\n");
+        const colorFn =
+          result.outcome === "failed" || result.outcome === "timeout"
+            ? chalk.red
+            : result.outcome === "passed"
+            ? chalk.green
+            : chalk.yellow;
+        if (pathString.length + outcomeString.length + 1 <= 80) {
+          console.info(
+            `${pathString}${new Array(80 - pathString.length - outcomeString.length - 1)
+              .fill(" ")
+              .join("")}${colorFn(outcomeString)}`
+          );
+        } else {
+          console.info(pathString);
+          console.info(
+            `${new Array(80 - outcomeString.length - 1).fill(" ").join("")}${colorFn(
+              outcomeString
+            )}`
+          );
+        }
+
+        if (result.err) {
+          const errString = result.err.stack
+            ? result.err.stack && indent(result.err.stack as string)
+            : `    ${DeterministicStringify(result.err, { space: "  " })}`;
+
+          console.error(`\n${errString}\n`);
+          if (result.err.showDiff) {
+            if (result.err.expected) {
+              console.error(`    Expected:\n`);
+              console.error(indent(DeterministicStringify(result.err.expected, { space: "  " })));
+            }
+            if (result.err.actual) {
+              console.error(`\n    Actual:\n`);
+              console.error(indent(DeterministicStringify(result.err.actual, { space: "  " })));
+            }
+            const green = "\x1b[32m";
+            const red = "\x1b[31m";
+            const reset = "\x1b[0m";
+            if (result.err.actual && result.err.expected) {
+              const diffs = Diff.diffJson(
+                DeterministicStringify(result.err.expected, { space: "  " }),
+                DeterministicStringify(result.err.actual, { space: "  " })
+              );
+              if (diffs.length === 1 && !diffs[0].added && !diffs[0].removed) {
+                console.error(
+                  `\n    ${green}Objects appear identical! Are you comparing objects with functions?`
+                );
+              } else {
+                let toLog = "";
+                console.error(
+                  `\n    Overall diff (${green}expected${reset}, ${red}actual${reset}):\n`
+                );
+                diffs.forEach(diff => {
+                  // This diff won't show well for users with either default green or red text.
+                  const colorPrefix = diff.added ? red : diff.removed ? green : reset;
+                  toLog += indent(`${colorPrefix}${diff.value}`);
+                });
+                console.error(toLog);
+              }
+            }
+            console.error(reset);
+          }
         }
       }
+
+      const hasErrors = ctx.results.some(result => result.outcome !== "passed");
+
+      if (hasErrors) {
+        console.log(`\nTests failed.`);
+      } else {
+        console.log(`\nTests passed.`);
+      }
+
+      process.exitCode = hasErrors ? 1 : 0;
+
+      if (!Runner.noExit) {
+        process.exit();
+      }
+
+      return ctx.results;
+    } catch (e) {
+      console.error(e);
+      process.exit(1);
     }
-
-    const hasErrors = ctx.results.some(result => result.outcome !== "passed");
-
-    if (hasErrors) {
-      console.log(`\nTests failed.`);
-    } else {
-      console.log(`\nTests passed.`);
-    }
-
-    process.exitCode = hasErrors ? 1 : 0;
-
-    if (!Runner.noExit) {
-      process.exit();
-    }
-
-    return ctx.results;
   }
 
   public static async result() {
