@@ -1,3 +1,5 @@
+config { type: "snippet" }
+
 js {
     const valueStr = "value";
 }

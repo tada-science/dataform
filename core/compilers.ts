@@ -6,11 +6,7 @@ import { ISqlxParseResults, parseSqlx } from "@dataform/sqlx/lexer";
 
 export function compile(code: string, path: string) {
   if (path.endsWith(".sqlx")) {
-    if (path.includes("includes/")) {
-      return compileIncludesSqlx(parseSqlx(code));
-    } else {
-      return compileSqlx(parseSqlx(code), path);
-    }
+    return compileSqlx(parseSqlx(code), path);
   }
   if (path.endsWith(".assert.sql")) {
     return compileAssertionSql(code, path);
@@ -105,6 +101,15 @@ const sqlxConfig = {
   tags: [],
   ...parsedConfig
 };
+
+if (sqlxConfig.type === "snippet") {
+  module.exports = (params) => {
+    ${results.js}
+    return \`${results.sql[0]}\`;
+  };
+  return;
+}
+
 
 const sqlStatementCount = ${results.sql.length};
 const hasIncremental = ${!!results.incremental};
@@ -215,13 +220,4 @@ function getFunctionPropertyNames(prototype: any) {
       })
     )
   ];
-}
-
-function compileIncludesSqlx(results: ISqlxParseResults) {
-  return `
-module.exports = (params) => {
-  ${results.js}
-  return \`${results.sql[0]}\`;
-};
-`;
 }
