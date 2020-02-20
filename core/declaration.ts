@@ -5,7 +5,12 @@ import { dataform } from "@dataform/protos";
 /**
  * Configuration options for `declaration` action types.
  */
-export interface IDeclarationConfig extends IDocumentableConfig, ITargetableConfig {}
+export interface IDeclarationConfig extends IDocumentableConfig, ITargetableConfig {
+  /**
+   * @hidden
+   */
+  environmentName?: string;
+}
 
 /**
  * @hidden
@@ -22,6 +27,10 @@ export class Declaration {
     if (config.columns) {
       this.columns(config.columns);
     }
+    if (config.environmentName) {
+      this.proto.environmentName = config.environmentName;
+    }
+
     return this;
   }
 

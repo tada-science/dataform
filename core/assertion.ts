@@ -32,6 +32,11 @@ export interface IAssertionConfig extends ITargetableConfig, IDependenciesConfig
    * A description for this assertion.
    */
   description?: string;
+
+  /**
+   * @hidden
+   */
+  environmentName?: string;
 }
 
 /**
@@ -66,6 +71,9 @@ export class Assertion {
     }
     if (config.schema) {
       this.schema(config.schema);
+    }
+    if (config.environmentName) {
+      this.proto.environmentName = config.environmentName;
     }
     return this;
   }

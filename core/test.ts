@@ -14,6 +14,11 @@ export interface ITestConfig {
    * The dataset that this unit test tests.
    */
   dataset?: Resolvable;
+
+  /**
+   * @hidden
+   */
+  environmentName?: string;
 }
 
 /**
@@ -37,6 +42,10 @@ export class Test {
     if (config.dataset) {
       this.dataset(config.dataset);
     }
+    if (config.environmentName) {
+      this.proto.environmentName = config.environmentName;
+    }
+
     return this;
   }
 

@@ -259,6 +259,9 @@ export class Table {
     if (config.schema) {
       this.schema(config.schema);
     }
+    if (config.environmentName) {
+      this.proto.environmentName = config.environmentName;
+    }
 
     return this;
   }
@@ -270,11 +273,6 @@ export class Table {
 
   public query(query: Contextable<ITableContext, string>) {
     this.contextableQuery = query;
-    return this;
-  }
-
-  public environment(environmentName: string) {
-    this.proto.environmentName = environmentName;
     return this;
   }
 

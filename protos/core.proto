@@ -19,6 +19,8 @@ message ProjectConfig {
 
   string schema_suffix = 7;
 
+  string environment_name = 10;
+
   // Deprecated. Please use 'default_database' instead.
   string gcloud_project_id = 6;
 }
@@ -222,6 +224,8 @@ message Assertion {
   repeated string tags = 9;
 
   ActionDescriptor action_descriptor = 10;
+
+  string environment_name = 12;
   
   // Generated.
   string file_name = 7;
@@ -240,6 +244,8 @@ message Declaration {
 
   ActionDescriptor action_descriptor = 3;
 
+  string environment_name = 5;
+
   // Generated.
   string file_name = 4;
 }
@@ -249,6 +255,8 @@ message Test {
 
   string test_query = 2;
   string expected_output_query = 3;
+
+  string environment_name = 5;
 
   // Generated.
   string file_name = 4;

@@ -177,15 +177,15 @@ suite("@dataform/core", () => {
         .that.matches(/Wrong type of table/);
     });
 
-    test("insert environment name", () => {
+    test("environment name", () => {
       const session = new Session(path.dirname(__filename), TestConfigs.redshift);
       session
         .publish("example", {
           type: "table",
-          description: "test description"
+          description: "test description",
+          environmentName: "someEnvironmentName"
         })
-        .query(ctx => `select * from ${ctx.environmentName()}`)
-        .environment("someEnvironmentName");
+        .query(ctx => `select * from ${ctx.environmentName()}`);
 
       const compiledGraph = session.compile();
 
