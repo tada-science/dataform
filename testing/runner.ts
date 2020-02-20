@@ -144,12 +144,16 @@ export class Runner {
       );
     }
     if (actual && expected) {
+      const diffsAreOnOneLine = !comparingObjects && this.diffsAreOnOneLine(expected, actual);
       const diffs = comparingObjects
         ? Diff.diffJson(
             DeterministicStringify(expected, { space: "  " }),
             DeterministicStringify(actual, { space: "  " })
           )
+        : diffsAreOnOneLine
+        ? Diff.diffWords(expected, actual)
         : Diff.diffLines(expected, actual);
+
       if (diffs.length === 1 && !diffs[0].added && !diffs[0].removed) {
         console.error(
           `\n    ${chalk.yellow(
@@ -164,21 +168,26 @@ export class Runner {
         diffs.forEach((diff, diffIndex, diffArr) => {
           // This diff won't show well for users with either default green or red text.
           const colorFn = diff.added ? chalk.red : diff.removed ? chalk.green : chalk.reset;
-          const indentMarker = `${diff.added ? "+" : diff.removed ? "-" : " "}${
-            comparingObjects ? "   " : "|"
-          }`;
-          toLog += diff.value
-            .split("\n")
-            // Add indent markers and colors only once per line.
-            .map((line, splitIndex, splitArr) =>
-              splitIndex < splitArr.length - 1 || diffIndex === diffArr.length - 1
-                ? colorFn(`${indentMarker}${line}`)
-                : line
-            )
-            .join("\n");
+          const indentMarker = diff.added ? "+" : diff.removed ? "-" : diffsAreOnOneLine ? "" : " ";
+          const indentSuffix = comparingObjects ? "   " : "|";
+          toLog += diffsAreOnOneLine
+            ? colorFn(`[${indentMarker}${diff.value}]`)
+            : diff.value
+                .split("\n")
+                // Add indent markers and colors only once per line.
+                .map((line, splitIndex, splitArr) =>
+                  splitIndex < splitArr.length - 1 || diffIndex === diffArr.length - 1
+                    ? colorFn(`${indentMarker}${indentSuffix}${line}`)
+                    : line
+                )
+                .join("\n");
         });
         console.error(`${comparingObjects ? this.indent(toLog) : toLog}\n`);
       }
     }
+  }
+
+  private static diffsAreOnOneLine(expected: string, actual: string) {
+    return expected.split("\n").length === 1 && actual.split("\n").length === 1;
   }
 }

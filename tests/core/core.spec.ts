@@ -177,6 +177,24 @@ suite("@dataform/core", () => {
         .that.matches(/Wrong type of table/);
     });
 
+    test("insert environment name", () => {
+      const session = new Session(path.dirname(__filename), TestConfigs.redshift);
+      session
+        .publish("example", {
+          type: "table",
+          description: "test description"
+        })
+        .query(ctx => `select * from ${ctx.environmentName()}`)
+        .environment("someEnvironmentName");
+
+      const compiledGraph = session.compile();
+
+      expect(compiledGraph.graphErrors.compilationErrors).to.eql([]);
+
+      const t = compiledGraph.tables.find(table => table.name === `schema.example`);
+      expect(t.query).equals("select * from someEnvironmentName");
+    });
+
     test("validation_redshift_success", () => {
       const session = new Session(path.dirname(__filename), TestConfigs.redshift);
       session.publish("example_without_dist", {

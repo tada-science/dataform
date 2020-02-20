@@ -159,6 +159,11 @@ export interface ITableConfig extends ITargetableConfig, IDocumentableConfig, ID
    * Azure SQL Data Warehouse-specific options.
    */
   sqldatawarehouse?: ISQLDataWarehouseOptions;
+
+  /**
+   * @hidden
+   */
+  environmentName?: string;
 }
 
 /**
@@ -176,6 +181,11 @@ export interface ITableContext extends ICommonContext {
    * Indicates whether the config indicates the file is dealing with an incremental table.
    */
   incremental: () => boolean;
+
+  /**
+   * Returns the name of the current environment as a string.
+   */
+  environmentName: () => string;
 }
 
 /**
@@ -260,6 +270,11 @@ export class Table {
 
   public query(query: Contextable<ITableContext, string>) {
     this.contextableQuery = query;
+    return this;
+  }
+
+  public environment(environmentName: string) {
+    this.proto.environmentName = environmentName;
     return this;
   }
 
@@ -447,6 +462,10 @@ export class TableContext implements ITableContext {
 
   public incremental() {
     return !!this.isIncremental;
+  }
+
+  public environmentName() {
+    return this.table.proto.environmentName;
   }
 
   public preOps(statement: Contextable<ITableContext, string | string[]>) {

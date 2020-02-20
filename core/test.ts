@@ -176,6 +176,10 @@ class RefReplacingContext implements ITableContext {
     return false;
   }
 
+  public environmentName() {
+    return "";
+  }
+
   public preOps(statement: Contextable<ITableContext, string | string[]>) {
     return "";
   }
