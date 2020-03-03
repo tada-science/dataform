@@ -137,6 +137,26 @@ Toggle between different visualisation options (e.g. horizontal vs. vertical bar
 
 Dashboards are a place to _pin_ charts created within views.
 
-### Configuration
+To create a new dashboard, add a new _object_ to the `dashboards`. The functionality is currently relatively limited:
 
-### Usage
+`navigator.json`:
+```js
+{
+  "views": [{...},{...}],
+  “dashboards”: [{"name": "New dashboard"}, {...}]
+}
+```
+
+You will now see a card for the new dashboard on the home page:
+
+<img src="https://assets.dataform.co/docs/Screenshot%202020-03-03%20at%2016.01.49.png" />
+
+To add charts to the dashboard, use the menu from the chart cards within views. Note: for this to work, you 
+need to be viewing Navigator from a _branch_.
+
+<img src="https://assets.dataform.co/docs/Screenshot%202020-03-03%20at%2016.03.53.png" />
+
+This will update the object you just added to `navigator.json`. To save the dashboard, you should follow the normal
+commit/push process from app.dataform.co.
+
+Note: it's also possible to update and add to dashboards by editing the JSON in `navigator.json` directly.
