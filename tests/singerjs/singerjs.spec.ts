@@ -1,4 +1,4 @@
-import { TapGitHub } from "@dataform/singerjs";
+import { GitHubStreams, TapGitHub } from "@dataform/singerjs";
 import { suite, test } from "@dataform/testing";
 import { expect } from "chai";
 import { TmpDirFixture } from "df/tests/utils/fixtures";
@@ -10,25 +10,20 @@ suite("@dataform/singerjs", ({ beforeEach, afterEach }) => {
   const tmpReferenceRootDir = tmpDirFixture.createNewTmpDir();
 
   test("Tap GitHub", async () => {
-    const tapGitHub = new TapGitHub(tmpReferenceRootDir);
-    expect(await fs.pathExists(tapGitHub.path)).to.equal(true);
-
-    await tapGitHub.setConfig({
-      access_token: "abcdefghijklmnopqrstuvwxyz1234567890ABCD",
-      repository: "singer-io/target-stitch"
+    const tapGitHub = await TapGitHub.create({
+      propFilesPath: "tap-github",
+      config: {
+        access_token: "abcdefghijklmnopqrstuvwxyz1234567890ABCD",
+        repository: "singer-io/target-stitch"
+      },
+      selectedStreams: ["comments", "pull_requests"]
     });
-    const configWritten = await fs.pathExists(tapGitHub.configPath);
-    expect(configWritten).to.equal(true);
 
-    await tapGitHub.acquire();
+    expect(await fs.pathExists(tapGitHub.configPath)).to.equal(true);
+    expect(await fs.pathExists(tapGitHub.catalogPath)).to.equal(true);
 
-    console.log(await fs.readdir(tapGitHub.path));
-    await tapGitHub.discover();
-    console.log(await fs.readdir(tapGitHub.path));
-    expect(await fs.existsSync(tapGitHub.catalogPath)).to.equal(true);
-
-    const contents = await fs.readJson(tapGitHub.catalogPath);
-    console.log("contents", contents);
-    expect(true).to.equal(false);
+    tapGitHub.startStream();
+    await new Promise(resolve => setTimeout(() => resolve(), 3000));
+    // TODO: Write state and new data, then pipe using df api incremental to warehouse.
   });
 });
