@@ -28,7 +28,7 @@ Compile hundreds of data models in under a second using SQLX. SQLX extends your 
 <br/>
 
 <p align="center">
-  <img src="https://assets.dataform.co/github-readme/single-source-of-truth%20(1).png">
+  <img src="https://assets.dataform.co/github-readme/simple_dag%20(1).png">
 </p>
 
 ### Supported warehouses
@@ -79,6 +79,10 @@ Dataform web is a development environment and production ready deployment tool f
 ## How it works
 
 - Read the [docs here](https://docs.dataform.co/getting-started#how-does-it-work?utm_medium=organic&utm_source=github_readme)
+
+<p align="center">
+  <img src="https://assets.dataform.co/github-readme/single-source-of-truth%20(1).png">
+</p>
 
 ## More about Dataform
 * [5 minute overview video](https://www.youtube.com/watch?v=axDKf0_FhYU&t=39s)
