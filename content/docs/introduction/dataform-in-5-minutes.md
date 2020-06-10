@@ -88,8 +88,8 @@ The following images illustrate a simple Dataform project and its dependency tre
 
 Managing dependencies with the `ref` function has numerous advantages.
 
-- The dependency tree complexity is abstracted away. Developers simply need to use the ref function and list dependencies.
-- It enables us to write smaller, more reusable and more modular queries instead of thousand lines long queries. That makes pipelines easier to debug.
+- The dependency tree complexity is abstracted away. Analysts simply need to use the ref function and list dependencies.
+- It enables users to write smaller, more reusable and more modular queries instead of thousand lines long queries. That makes pipelines easier to debug.
 - You get alerted in real time about issues like missing or circular dependencies
 
 ### SQLX = transformation logic + data quality testing + documentation
