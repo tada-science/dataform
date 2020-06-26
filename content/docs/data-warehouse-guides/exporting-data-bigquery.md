@@ -3,6 +3,13 @@ title: Exporting Data From BigQuery as a JSON
 subtitle: Learn how to export data from Bigquery using the bq command line.
 priority: 1
 ---
+---
+title: "Exporting Data From BigQuery as a JSON"
+description: "Learn how to export data from Bigquery using the bq command line."
+date: "2020-06-26"
+tags: ["Data Warehouses"]
+type: "Data Warehouse Guide"
+---
 
 Cloud-based services are notorious for being closed-systems. Thankfully, Google Cloud delivers enough flexibility with a web-based management console, programming interfaces, and a handy command-line toolset to interact with all of its services, including BigQuery. For instance, those new to BigQuery will likely appreciate [<u>Cloud Console</u>](https://console.cloud.google.com/bigquery), which provides a friendly, streamlined UI for performing and organizing queries and loading and exporting data in a variety of formats, including JSON.
 
