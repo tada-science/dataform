@@ -66,9 +66,7 @@ load("//testing:build_test.bzl", "build_test")
 build_test(
     name = "build_test",
     deps = [
-        ":dataform_go_proto",
-        ":dataform_java_proto",
-        ":schedules_go_proto",
-        ":schedules_java_proto",
+        ":dataform_proto",
+        ":schedules_proto",
     ],
 )
