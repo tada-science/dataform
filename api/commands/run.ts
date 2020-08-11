@@ -409,6 +409,9 @@ export class Runner {
       await this.dbadapter.setMetadata(action);
     }
 
+    await this.dbadapter.execute(`select 1`);
+    await this.dbadapter.execute(`select 2`);
+
     if (this.graph.projectConfig.useRunCache) {
       this.metadataReadPromises.push(
         (async () => {

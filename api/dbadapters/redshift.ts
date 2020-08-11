@@ -306,6 +306,7 @@ class PgPoolExecutor {
         byteLimit: options?.byteLimit
       });
       options?.onCancel?.(() => query.destroy());
+      let closed = false;
       query.on("data", (row: any) => {
         try {
           verifyUniqueColumnNames((query as any).cursor._result.fields);
@@ -314,10 +315,11 @@ class PgPoolExecutor {
           query.destroy(e);
           return;
         }
-        if (!results.push(row)) {
+        if (!results.push(row) && !closed) {
           // The correct way to stop processing data is to close the cursor itself.
           // This results in "end" firing below. https://node-postgres.com/api/cursor#close
           (query as any).cursor.close();
+          closed = true;
         }
       });
       query.on("error", err => {
@@ -334,7 +336,7 @@ class PgPoolExecutor {
       });
       query.on("end", () => {
         try {
-          client.release();
+          client.release(new Error("make this unusable"));
         } catch (e) {
           // tslint:disable-next-line: no-console
           console.error("Error thrown when releasing ended pg.Query", e.message, e.stack);
