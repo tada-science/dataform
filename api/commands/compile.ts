@@ -59,19 +59,25 @@ export async function compile(
 
 export class CompileChildProcess {
   public static forkProcess() {
-    // Runs the worker_bundle script we generate for the package (see packages/@dataform/cli/BUILD)
-    // if it exists, otherwise run the bazel compile loader target.
-    const findForkScript = () => {
+    let workerBundle: string;
+    try {
+      // The bundled CLI packages the worker_bundle directly.
+      workerBundle = require.resolve("./worker_bundle");
+    } catch (e) {
       try {
-        const workerBundlePath = require.resolve("./worker_bundle");
-        return workerBundlePath;
+        // This resolution  happens when run in this Bazel environment. It could be avoided by copying
+        // the worker bundle via bazel to the appropriate places for every use case, but this seems cleaner.
+        workerBundle = require.resolve("df/sandbox/vm/worker_bundle.js");
       } catch (e) {
-        return require.resolve("../../sandbox/vm/compile_loader");
+        // This resolution happens when run in an external bazel workspace. The worker bundle must explicity
+        // be copied to the root of of the project by a build rule.
+        workerBundle = "./bazel-bin/worker_bundle/worker_bundle.js";
       }
-    };
-    const forkScript = findForkScript();
+    }
     return new CompileChildProcess(
-      fork(require.resolve(forkScript), [], { stdio: [0, 1, 2, "ipc", "pipe"] })
+      fork(workerBundle, [], {
+        stdio: [0, 1, 2, "ipc", "pipe"]
+      })
     );
   }
   private readonly childProcess: ChildProcess;

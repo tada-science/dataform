@@ -47,6 +47,16 @@ const checkImports = imports => {
 };
 
 export default {
+  output: {
+    paths: process.env.WORKER_BUNDLE
+      ? {
+          vm2: "./node_modules/vm2",
+          glob: "./node_modules/glob",
+          protobufjs: "./node_modules/protobufjs",
+          "protobufjs/minimal": "./node_modules/protobufjs/minimal"
+        }
+      : {}
+  },
   plugins: [
     checkImports(importsToBundle),
     resolve({
