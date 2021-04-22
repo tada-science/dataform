@@ -281,16 +281,33 @@ where table_schema = :1
     return rows;
   }
 
-  public async schemas(database: string): Promise<string[]> {
-    const { rows } = await this.execute(
-      `select SCHEMA_NAME from ${database ? `"${database}".` : ""}information_schema.schemata`
-    );
-    return rows.map(row => row.SCHEMA_NAME);
+  public async databases(): Promise<string[]> {
+    const { rows } = await this.execute(`SHOW DATABASES`);
+    return rows.map(row => row.name);
   }
 
-  public async createSchema(database: string, schema: string): Promise<void> {
+  public async schemas(databases?: string[]): Promise<dataform.ISchema[]> {
+    if (databases === undefined) {
+      databases = await this.databases();
+    }
+
+    const schemas = new Array<dataform.ISchema>();
+    await Promise.all(
+      databases.map(async database => {
+        const { rows } = await this.execute(
+          `select SCHEMA_NAME from ${database ? `"${database}".` : ""}information_schema.schemata`
+        );
+        schemas.push(...rows.map(row => ({ database, schema: row.SCHEMA_NAME })));
+      })
+    );
+    return schemas;
+  }
+
+  public async createSchema(schema: dataform.ISchema): Promise<void> {
     await this.execute(
-      `create schema if not exists ${database ? `"${database}".` : ""}"${schema}"`
+      `create schema if not exists ${schema.database ? `"${schema.database}".` : ""}"${
+        schema.schema
+      }"`
     );
   }
 

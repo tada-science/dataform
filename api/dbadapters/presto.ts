@@ -124,37 +124,44 @@ export class PrestoDbAdapter implements IDbAdapter {
     return queryEvaluations;
   }
 
-  public async schemas(database: string): Promise<string[]> {
-    const result = await this.execute(`show schemas from ${database}`);
+  public async databases(): Promise<string[]> {
+    const result = await this.execute("show catalogs");
     return result.rows.flat();
   }
 
-  public async createSchema(database: string, schema: string): Promise<void> {
-    await this.execute(`create schema if not exists ${database}.${schema}`);
+  public async schemas(databases?: string[]): Promise<dataform.ISchema[]> {
+    if (databases === undefined) {
+      databases = await this.databases();
+    }
+
+    const schemas = new Array<dataform.ISchema>();
+    await Promise.all(
+      databases.map(async database => {
+        const { rows } = await this.execute(`show schemas from ${database}`);
+        schemas.push(...rows.flat().map(cell => ({ database, schema: cell })));
+      })
+    );
+    return schemas;
+  }
+
+  public async createSchema(schema: dataform.ISchema): Promise<void> {
+    await this.execute(`create schema if not exists ${schema.database}.${schema.schema}`);
   }
 
   public async tables(): Promise<dataform.ITarget[]> {
-    const databases = await this.databases();
     const targets: dataform.ITarget[] = [];
-    await Promise.all(
-      databases.map(
-        async database =>
-          await Promise.all(
-            (await this.schemas(database)).map(async schema => {
-              const result = await this.execute(`show tables from ${database}.${schema}`);
-              targets.push(
-                ...result.rows.flat().map(table =>
-                  dataform.Target.create({
-                    database,
-                    schema,
-                    name: table as string
-                  })
-                )
-              );
-            })
-          )
-      )
-    );
+    (await this.schemas()).forEach(async schema => {
+      const result = await this.execute(`show tables from ${schema.database}.${schema.schema}`);
+      targets.push(
+        ...result.rows.flat().map(table =>
+          dataform.Target.create({
+            database: schema.database,
+            schema: schema.schema,
+            name: table as string
+          })
+        )
+      );
+    });
     return targets;
   }
 
@@ -207,10 +214,5 @@ export class PrestoDbAdapter implements IDbAdapter {
   ): Promise<dataform.ITableMetadata[]> {
     // Unimplemented.
     return [];
-  }
-
-  private async databases(): Promise<string[]> {
-    const result = await this.execute("show catalogs");
-    return result.rows.flat();
   }
 }
